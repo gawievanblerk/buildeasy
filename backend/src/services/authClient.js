@@ -19,7 +19,8 @@ class AuthClient {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      return response.data.user;
+      // Response structure: { success, data: { user: {...} } }
+      return response.data.data?.user || response.data.user;
     } catch (error) {
       logger.error('Token verification failed:', error.message);
       throw new Error('Invalid or expired token');
@@ -68,12 +69,22 @@ class AuthClient {
    * @returns {boolean} True if user has BuildEasy access
    */
   hasBuildeasyAccess(user) {
-    if (!user || !user.organization) {
+    if (!user) {
       return false;
     }
 
-    const products = user.organization.products || [];
-    return products.includes('buildeasy') || products.includes('all');
+    // Check for products in JWT token payload (top-level products array)
+    if (user.products && Array.isArray(user.products)) {
+      return user.products.includes('buildeasy') || user.products.includes('all');
+    }
+
+    // Fallback: Check for products in organization object
+    if (user.organization && user.organization.products) {
+      const products = user.organization.products || [];
+      return products.includes('buildeasy') || products.includes('all');
+    }
+
+    return false;
   }
 
   /**
@@ -82,7 +93,8 @@ class AuthClient {
    * @returns {string} Organization ID
    */
   getOrganizationId(user) {
-    return user?.organization?.id || null;
+    // JWT payload has 'org' field for organization ID
+    return user?.org || user?.organization?.id || null;
   }
 }
 

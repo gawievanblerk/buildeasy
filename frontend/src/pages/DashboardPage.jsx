@@ -10,7 +10,7 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isCreating, setIsCreating] = useState(false)
-  const { user } = useAuthStore()
+  const { user, accessToken } = useAuthStore()
 
   useEffect(() => {
     fetchApplications()
@@ -19,7 +19,9 @@ export default function DashboardPage() {
   const fetchApplications = async () => {
     try {
       setIsLoading(true)
-      const response = await axios.get(`${API_URL}/api/applications`)
+      const response = await axios.get(`${API_URL}/api/applications`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      })
       setApplications(response.data.applications || [])
       setError(null)
     } catch (err) {
@@ -38,7 +40,9 @@ export default function DashboardPage() {
         description: 'A new BuildEasy application'
       }
 
-      const response = await axios.post(`${API_URL}/api/applications`, newApp)
+      const response = await axios.post(`${API_URL}/api/applications`, newApp, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      })
       setApplications([response.data.application, ...applications])
       setError(null)
     } catch (err) {
@@ -52,7 +56,9 @@ export default function DashboardPage() {
     if (!confirm('Are you sure you want to delete this application?')) return
 
     try {
-      await axios.delete(`${API_URL}/api/applications/${id}`)
+      await axios.delete(`${API_URL}/api/applications/${id}`, {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      })
       setApplications(applications.filter(app => app.id !== id))
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to delete application')

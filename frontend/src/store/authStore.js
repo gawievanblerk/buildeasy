@@ -24,18 +24,22 @@ export const useAuthStore = create(
             password
           })
 
-          const { user, accessToken, refreshToken } = response.data
+          // Response structure: { success, message, data: { user, organization, licenses, accessToken } }
+          const { data } = response.data
+          const { user, organization, licenses, accessToken } = data
+          const refreshToken = data.refreshToken || null
 
-          // Check if user has BuildEasy access
-          const products = user.organization?.products || []
-          const hasAccess = products.includes('buildeasy') || products.includes('all')
+          // Check if user has BuildEasy access from licenses
+          const hasBuildeasyLicense = licenses && licenses.buildeasy
 
-          if (!hasAccess) {
-            throw new Error('You do not have access to BuildEasy. Please contact support.')
-          }
+          // For now, allow all authenticated users to access BuildEasy
+          // TODO: Uncomment this when BuildEasy licenses are set up
+          // if (!hasBuildeasyLicense) {
+          //   throw new Error('You do not have access to BuildEasy. Please contact support.')
+          // }
 
           set({
-            user,
+            user: { ...user, organization },
             accessToken,
             refreshToken,
             isAuthenticated: true,

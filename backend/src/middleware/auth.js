@@ -22,8 +22,13 @@ const authenticate = async (req, res, next) => {
     // Verify token with auth server and get user profile
     const user = await authClient.verifyToken(token);
 
+    // Debug logging
+    logger.info('User object from token verification:', JSON.stringify(user, null, 2));
+    logger.info('Has BuildEasy access?', authClient.hasBuildeasyAccess(user));
+
     // Check if user has BuildEasy access
     if (!authClient.hasBuildeasyAccess(user)) {
+      logger.error('BuildEasy access denied for user:', user);
       return res.status(403).json({
         success: false,
         error: 'BuildEasy product access required'
@@ -33,9 +38,9 @@ const authenticate = async (req, res, next) => {
     // Attach user and organization to request object
     req.user = user;
     req.organizationId = authClient.getOrganizationId(user);
-    req.userId = user.id;
+    req.userId = user.sub || user.id; // JWT payload uses 'sub' for user ID
 
-    logger.info(`Authenticated user: ${user.email} (${user.id})`);
+    logger.info(`Authenticated user: ${user.email} (${req.userId})`);
 
     next();
   } catch (error) {
@@ -62,7 +67,7 @@ const optionalAuth = async (req, res, next) => {
 
       req.user = user;
       req.organizationId = authClient.getOrganizationId(user);
-      req.userId = user.id;
+      req.userId = user.sub || user.id; // JWT payload uses 'sub' for user ID
     }
 
     next();
